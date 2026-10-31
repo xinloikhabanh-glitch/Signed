@@ -18,7 +18,7 @@ jobs:
             unzip -oq ios-src.zip
           fi
           ls -la
-          for f in project.yml Sources/App.swift Sources/WebHost.swift Resources/keys.html Resources/signer.html; do
+          for f in project.yml Sources/App.swift Sources/WebHost.swift Resources/keys.html Resources/studio.html Resources/signer.html; do
             if [ ! -f "$f" ]; then
               echo "THIẾU FILE: $f  (hãy upload ios-src.zip ở thư mục gốc repo, đừng giải nén)"
               exit 1
@@ -80,7 +80,7 @@ jobs:
           APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -n 1)
           if [ -z "$APP" ]; then echo "Không thấy file .app"; exit 1; fi
           # kiểm tra 2 trang HTML đã vào app
-          ls "$APP" | grep -E "keys.html|signer.html"
+          ls "$APP" | grep -E "keys.html|studio.html|signer.html"
           mkdir -p Payload
           cp -R "$APP" Payload/
           zip -qr TouchStudio.ipa Payload
