@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05070d">
+<meta name="robots" content="noindex, nofollow">
+<title>Touch Signer · Liquid Glass</title>
+<script>document.documentElement.classList.add('tt-lock')</script>
+<style id="ttGateCss">
+html.tt-lock body>*:not(#ttGate):not(#ttBadge){visibility:hidden!important;pointer-events:none!important}
+#ttGate{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:rgba(4,5,15,.72);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%)}
+#ttGate[hidden],#ttBadge[hidden]{display:none!important}
+#ttGate .tt-card{width:100%;max-width:380px;padding:28px 22px;text-align:center;border-radius:30px;color:var(--text,#f0f4ff);
+ background:linear-gradient(140deg,rgba(255,255,255,.2),rgba(255,255,255,.06) 55%,rgba(255,255,255,.12));
+ -webkit-backdrop-filter:blur(26px) saturate(190%);backdrop-filter:blur(26px) saturate(190%);border:1px solid rgba(255,255,255,.26);
+ box-shadow:inset 0 1.5px 0 rgba(255,255,255,.5),0 24px 70px rgba(0,0,0,.5);animation:ttRise .7s cubic-bezier(.2,.9,.25,1) both}
+#ttGate h2{margin:0 0 4px;font-size:24px;letter-spacing:-.3px}
+#ttGate p{margin:0 0 18px;color:var(--muted,#99a7c4);font-size:14px}
+#ttKey{width:100%;font:inherit;font-size:17px;text-align:center;text-transform:uppercase;letter-spacing:1.5px;color:var(--text,#f0f4ff);padding:14px;border-radius:18px;outline:none;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.25)}
+#ttKey:focus{border-color:var(--accent,#6df5dc);box-shadow:0 0 0 4px rgba(109,245,220,.2)}
+#ttGo{width:100%;margin-top:12px;font:inherit;font-weight:700;padding:13px 18px;border-radius:99px;border:0;cursor:pointer;color:var(--accentText,#07151a);
+ background:linear-gradient(135deg,var(--accent,#6df5dc),var(--accent2,#8b8cff));box-shadow:0 8px 26px rgba(109,245,220,.25);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+#ttGo:active{transform:scale(.95)}#ttGo:disabled{opacity:.55}
+#ttMsg{min-height:20px;margin-top:12px;font-size:14px;color:var(--bad,#ff728e)}
+#ttGate .tt-shake{animation:ttShake .4s}
+#ttBadge{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147482000;display:flex;align-items:center;gap:8px;padding:7px 8px 7px 12px;border-radius:99px;font-size:12px;
+ color:var(--text,#f0f4ff);background:rgba(17,24,43,.7);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.2)}
+#ttBadge button{font:inherit;font-size:12px;font-weight:600;color:inherit;cursor:pointer;padding:5px 10px;border-radius:99px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1)}
+@keyframes ttRise{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes ttShake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+</style>
+
+<style>
+:root{--text:#f4f6fb;--muted:rgba(235,240,255,.62);--accent:#64d2ff;--accent2:#8b8cff;--accentText:#04141c;--good:#30d158;--bad:#ff728e;--amber:#ffd60a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#05070d}
+html::before{content:"";position:fixed;inset:-25%;z-index:-1;pointer-events:none;will-change:transform;animation:drift 26s ease-in-out infinite alternate;
+ background:radial-gradient(38% 38% at 22% 18%,rgba(91,107,255,.75),transparent 70%),radial-gradient(34% 34% at 82% 38%,rgba(255,79,163,.55),transparent 70%),radial-gradient(40% 40% at 40% 88%,rgba(25,211,197,.55),transparent 70%)}
+@keyframes drift{0%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(4%,3%,0) scale(1.1)}100%{transform:translate3d(-3%,5%,0) scale(.97)}}
+body{margin:0;font:16px/1.45 -apple-system,"SF Pro Display",system-ui,"Segoe UI",sans-serif;color:var(--text);background:transparent;-webkit-font-smoothing:antialiased;
+ padding:env(safe-area-inset-top) 0 calc(84px + env(safe-area-inset-bottom))}
+[hidden]{display:none!important}
+main{width:100%;max-width:560px;margin:0 auto;padding:18px 16px;display:grid;gap:14px}
+.glass{--mx:30%;--my:0%;position:relative;overflow:hidden;isolation:isolate;border-radius:30px;padding:18px;
+ background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.06) 55%,rgba(255,255,255,.13));
+ -webkit-backdrop-filter:blur(28px) saturate(200%);backdrop-filter:blur(28px) saturate(200%);border:1px solid rgba(255,255,255,.26);
+ box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(255,255,255,.12),0 20px 54px rgba(0,0,0,.4);animation:rise .8s cubic-bezier(.2,.9,.25,1) both}
+.glass::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(220px 220px at var(--mx) var(--my),rgba(255,255,255,.3),transparent 70%)}
+.glass:nth-of-type(2){animation-delay:.07s}.glass:nth-of-type(3){animation-delay:.14s}
+@keyframes rise{from{opacity:0;transform:translate3d(0,24px,0) scale(.97)}to{opacity:1;transform:none}}
+h1{font-size:27px;margin:4px 2px 0;letter-spacing:-.5px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:0 0 12px;font-weight:600}
+label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px}
+input[type=text],input[type=password],select{width:100%;font:inherit;color:var(--text);padding:12px 14px;border-radius:16px;outline:none;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.22)}
+select option{color:#111}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(100,210,255,.18)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font:inherit;font-size:16px;line-height:1;min-width:38px;padding:8px 10px;border-radius:12px;color:var(--text);cursor:pointer;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.chip:active{transform:scale(.88)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
+.row small{display:block;color:var(--muted);font-size:12.5px}
+.sw{position:relative;flex:none;width:56px;height:34px;padding:0;border:0;border-radius:99px;cursor:pointer;background:rgba(120,120,128,.42);box-shadow:inset 0 1px 4px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.12);transition:background .35s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:28px;height:28px;border-radius:99px;background:linear-gradient(#fff,#e6ebf5);box-shadow:0 3px 9px rgba(0,0,0,.4);transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+.sw[aria-checked=true]{background:var(--good)}.sw[aria-checked=true]::after{transform:translateX(22px)}
+.btn{font:inherit;font-weight:700;cursor:pointer;color:var(--accentText);padding:13px 18px;border-radius:99px;border:0;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.5),0 8px 26px rgba(80,140,255,.4);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.btn:active{transform:scale(.95)}.btn:disabled{opacity:.5}
+.btn.ghost{color:var(--text);background:rgba(255,255,255,.14);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.35)}
+.btn.big{width:100%;font-size:17px;padding:16px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.btns .btn{flex:1;min-width:120px;font-size:14px;padding:11px 12px}
+.info{margin-top:12px;padding:12px 14px;border-radius:18px;background:rgba(0,0,0,.24);border:1px solid rgba(255,255,255,.14);font-size:13.5px;word-break:break-word}
+.info b{color:var(--muted);font-weight:600;display:inline-block;min-width:78px}
+.info div{padding:2px 0}
+.drop{display:grid;place-items:center;text-align:center;min-height:112px;padding:14px;border-radius:24px;border:1.5px dashed rgba(255,255,255,.32);background:rgba(0,0,0,.2);color:var(--muted);cursor:pointer;transition:background .3s,border-color .3s}
+.drop.on{background:rgba(100,210,255,.16);border-color:var(--accent)}
+.drop strong{color:var(--text)}
+.ok{color:var(--good)}.err{color:var(--bad)}.warn{color:var(--amber)}
+#status{min-height:22px;margin-top:12px;font-size:14px}
+.note{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+@media (prefers-reduced-motion:reduce){html::before,.glass{animation:none!important}}
+</style>
+</head>
+<body>
+<main id="app">
+  <h1>Touch Signer</h1>
+
+  <section class="glass">
+    <h2>1 · Chứng chỉ</h2>
+    <label for="cn">Tên (Common Name) — gõ được ký tự đặc biệt, emoji</label>
+    <input id="cn" type="text" value="Touch Technology ✦" autocomplete="off" spellcheck="false">
+    <div class="chips" id="chips"></div>
+    <div class="btns"><button class="btn ghost" id="rnd" type="button">🎲 Tên ngẫu nhiên</button></div>
+    <div class="grid2">
+      <div><label for="org">Tổ chức (O)</label><input id="org" type="text" value="Touch Technology" autocomplete="off"></div>
+      <div><label for="ou">Bộ phận (OU)</label><input id="ou" type="text" value="" autocomplete="off"></div>
+    </div>
+    <div class="grid2">
+      <div><label for="co">Quốc gia (2 chữ)</label><input id="co" type="text" value="VN" maxlength="2" autocomplete="off"></div>
+      <div><label for="yrs">Hiệu lực</label>
+        <select id="yrs"><option value="1">1 năm</option><option value="3">3 năm</option><option value="10" selected>10 năm</option><option value="20">20 năm</option></select></div>
+    </div>
+    <label for="bits">Độ dài khoá RSA</label>
+    <select id="bits"><option value="2048" selected>2048-bit (nhanh)</option><option value="3072">3072-bit</option><option value="4096">4096-bit (chậm)</option></select>
+    <div class="row"><div>Chứng chỉ gốc (CA)<small>Cho phép đặt làm tin cậy trên iPhone</small></div><button class="sw" id="swCA" role="switch" aria-checked="true" aria-label="CA"></button></div>
+    <div class="row"><div>Nhớ trong trình duyệt này<small>Lưu cả khoá riêng vào máy bạn (không gửi đi đâu)</small></div><button class="sw" id="swSave" role="switch" aria-checked="true" aria-label="Lưu"></button></div>
+    <div class="btns">
+      <button class="btn" id="gen" type="button">Tạo chứng chỉ</button>
+      <button class="btn ghost" id="loadBtn" type="button">Nạp .pem / .crt + .key</button>
+    </div>
+    <input id="loadFiles" type="file" multiple accept=".pem,.crt,.cer,.key,.txt" hidden>
+    <div class="info" id="certInfo" hidden></div>
+    <div class="btns" id="certBtns" hidden>
+      <button class="btn ghost" id="dlCrt" type="button">⬇ .crt (cài tin cậy)</button>
+      <button class="btn ghost" id="dlPem" type="button">⬇ .pem (cert + khoá)</button>
+      <button class="btn ghost" id="clr" type="button">Xoá</button>
+    </div>
+  </section>
+
+  <section class="glass">
+    <h2>2 · Ký file (bplist / plist / mobileconfig)</h2>
+    <div class="drop" id="drop"><div><strong>Chạm để chọn file</strong><br>hoặc kéo thả vào đây<br><small id="fileInfo">.mobileconfig · .plist · bplist · file bất kỳ</small></div></div>
+    <input id="file" type="file" hidden>
+    <div class="row"><div>Gói nội dung vào chữ ký<small>Bật cho .mobileconfig. Tắt = chữ ký rời (.p7s)</small></div><button class="sw" id="swEmb" role="switch" aria-checked="true" aria-label="Gói"></button></div>
+    <button class="btn big" id="auto" type="button">⚡ Ký tự động</button>
+    <div id="status" role="status"></div>
+    <div class="btns" id="outBtns" hidden><button class="btn" id="dlOut" type="button">⬇ Tải file đã ký</button></div>
+    <p class="note">"Ký tự động" sẽ tự tạo chứng chỉ mới (theo mục 1) nếu chưa có, rồi ký và kiểm tra lại chữ ký ngay.</p>
+  </section>
+
+  <section class="glass">
+    <h2>Lưu ý</h2>
+    <p class="note" style="margin-top:0">Chứng chỉ tự tạo chỉ do bạn tin cậy nên iPhone sẽ báo "Chưa được xác minh" cho đến khi bạn cài file .crt rồi bật tin cậy: Cài đặt → Cài đặt chung → Giới thiệu → Cài đặt tin cậy chứng nhận. Dùng tên của chính bạn; đừng đặt tên giả danh tổ chức khác. Chữ ký này chứng minh file không bị sửa, không làm file "chính chủ" của ai.</p>
+  </section>
+</main>
+<div id="ttGate"><div class="tt-card" id="ttCard">
+  <h2>Nhập key</h2><p>Cần key hợp lệ để dùng công cụ này.</p>
+  <input id="ttKey" placeholder="PREM-XXXX-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false">
+  <button id="ttGo" type="button">Mở khoá</button><div id="ttMsg"></div>
+</div></div>
+<div id="ttBadge" hidden><span id="ttInfo"></span><button id="ttOut" type="button">Đăng xuất key</button></div>
+<script>
+(function(){
+'use strict';
+var API='https://api-rust-alpha-49.vercel.app/api/verify';
+var RECHECK=60000;
+var $=function(i){return document.getElementById(i)};
+function g(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function sset(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function del(k){try{localStorage.removeItem(k)}catch(e){}}
+function hwid(){var id=g('tt_hwid');if(!id){var a=new Uint8Array(16);crypto.getRandomValues(a);id='web-'+Array.prototype.map.call(a,function(b){return('0'+b.toString(16)).slice(-2)}).join('');sset('tt_hwid',id)}return id}
+var HW=hwid(),session=null,skew=0,timer=null,tick=null;
+
+function verify(key){
+  var ctl=typeof AbortController==='function'?new AbortController():null;
+  var to=setTimeout(function(){if(ctl)ctl.abort()},15000);
+  return fetch(API,{method:'POST',headers:{'content-type':'application/json'},signal:ctl?ctl.signal:undefined,
+    body:JSON.stringify({key:key,hwid:HW,deviceName:navigator.platform||'web'})})
+  .then(function(r){return r.json().then(function(d){return{status:r.status,d:d}})})
+  .finally(function(){clearTimeout(to)});
+}
+function mask(k){return k.length>10?k.slice(0,4)+'••••'+k.slice(-4):k}
+function left(){
+  if(!session)return'';if(session.lifetime)return'Vĩnh viễn';
+  var ms=session.expiresAt-(Date.now()+skew);if(ms<=0)return'Hết hạn';
+  var m=Math.floor(ms/60000),d=Math.floor(m/1440),h=Math.floor((m%1440)/60);
+  return d>=1?d+' ngày '+h+' giờ':h>=1?h+' giờ '+(m%60)+' phút':m+' phút';
+}
+function badge(){$('ttInfo').textContent=session?String(session.tier).toUpperCase()+' · '+left()+' · '+mask(session.key):''}
+function lock(msg){
+  clearInterval(timer);clearInterval(tick);session=null;
+  document.documentElement.classList.add('tt-lock');
+  $('ttGate').hidden=false;$('ttBadge').hidden=true;$('ttMsg').textContent=msg||'';
+  if(msg){var c=$('ttCard');c.classList.remove('tt-shake');void c.offsetWidth;c.classList.add('tt-shake')}
+}
+function unlock(d,key){
+  session=d;skew=d.serverTime-Date.now();sset('tt_key',key);
+  document.documentElement.classList.remove('tt-lock');
+  $('ttGate').hidden=true;$('ttBadge').hidden=false;$('ttMsg').textContent='';badge();
+  clearInterval(timer);clearInterval(tick);
+  tick=setInterval(function(){badge();if(session&&!session.lifetime&&session.expiresAt<=Date.now()+skew)recheck()},1000);
+  timer=setInterval(recheck,RECHECK);
+}
+function recheck(){
+  var key=g('tt_key');if(!key)return lock('');
+  verify(key).then(function(r){
+    if(!r.d||!r.d.success){
+      if(r.status>=500)return;                 // lỗi máy chủ: không khoá
+      lock((r.d&&(r.d.message||r.d.error))||'Key không còn hiệu lực');return;
+    }
+    session=r.d;skew=r.d.serverTime-Date.now();badge();
+  }).catch(function(){ /* mất mạng: giữ nguyên, thử lại lần sau */ });
+}
+function submit(){
+  var key=$('ttKey').value.trim().toUpperCase();
+  if(!key){$('ttMsg').textContent='Hãy nhập key.';return}
+  $('ttGo').disabled=true;$('ttMsg').textContent='';
+  verify(key).then(function(r){
+    if(r.d&&r.d.success)unlock(r.d,key);
+    else lock((r.d&&(r.d.message||r.d.error))||'Key không hợp lệ');
+  }).catch(function(){$('ttMsg').textContent='Không kết nối được máy chủ. Thử lại sau.'})
+  .finally(function(){$('ttGo').disabled=false});
+}
+$('ttGo').addEventListener('click',submit);
+$('ttKey').addEventListener('keydown',function(e){if(e.key==='Enter')submit()});
+$('ttOut').addEventListener('click',function(){del('tt_key');$('ttKey').value='';lock('')});
+var saved=g('tt_key');if(saved){$('ttKey').value=saved;submit()}
+})();
+</script>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const enc=new TextEncoder(),dec=new TextDecoder();
+const subtle=(window.crypto||{}).subtle;
+if(!subtle){document.addEventListener('DOMContentLoaded',()=>{$('#status').textContent='Trình duyệt này không hỗ trợ mã hoá (cần HTTPS hoặc file cục bộ).'})}
+
+/* ---------- DER ---------- */
+const cat=(...a)=>{let n=0;for(const x of a)n+=x.length;const o=new Uint8Array(n);let p=0;for(const x of a){o.set(x,p);p+=x.length}return o};
+const lenB=n=>{if(n<128)return Uint8Array.of(n);const b=[];while(n>0){b.unshift(n&255);n=Math.floor(n/256)}return Uint8Array.of(128|b.length,...b)};
+const tlv=(t,...c)=>{const body=cat(...c);return cat(Uint8Array.of(t),lenB(body.length),body)};
+const SEQ=(...c)=>tlv(0x30,...c),SET=(...c)=>tlv(0x31,...c);
+const oid=s=>{const p=s.split('.').map(Number);const b=[p[0]*40+p[1]];for(let i=2;i<p.length;i++){let v=p[i];const t=[v&127];v=Math.floor(v/128);while(v>0){t.unshift((v&127)|128);v=Math.floor(v/128)}b.push(...t)}return tlv(6,Uint8Array.from(b))};
+const intU=bytes=>{let i=0;while(i<bytes.length-1&&bytes[i]===0)i++;let b=bytes.slice(i);if(b[0]&128)b=cat(Uint8Array.of(0),b);return tlv(2,b)};
+const intN=n=>tlv(2,Uint8Array.of(n));
+const NULL=Uint8Array.of(5,0);
+const octet=b=>tlv(4,b),bitStr=(b,unused=0)=>tlv(3,cat(Uint8Array.of(unused),b));
+const utf8S=s=>tlv(0x0c,enc.encode(s)),prtS=s=>tlv(0x13,enc.encode(s));
+const utcT=d=>{const p=n=>String(n).padStart(2,'0'),y=d.getUTCFullYear();
+  const r=`${p(d.getUTCMonth()+1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`;
+  return y<2050?tlv(0x17,enc.encode(p(y%100)+r)):tlv(0x18,enc.encode(y+r))};
+const cmp=(a,b)=>{const n=Math.min(a.length,b.length);for(let i=0;i<n;i++)if(a[i]!==b[i])return a[i]-b[i];return a.length-b.length};
+const O={sha256rsa:'1.2.840.113549.1.1.11',rsa:'1.2.840.113549.1.1.1',sha256:'2.16.840.1.101.3.4.2.1',data:'1.2.840.113549.1.7.1',signed:'1.2.840.113549.1.7.2',
+  ct:'1.2.840.113549.1.9.3',md:'1.2.840.113549.1.9.4',st:'1.2.840.113549.1.9.5',cn:'2.5.4.3',c:'2.5.4.6',o:'2.5.4.10',ou:'2.5.4.11'};
+
+function rd(b,p=0){const tag=b[p];let l=b[p+1],o=p+2;if(l&128){const n=l&127;l=0;for(let i=0;i<n;i++)l=l*256+b[o+i];o+=n}return{tag,start:o,end:o+l,all:b.subarray(p,o+l),body:b.subarray(o,o+l)}}
+function kids(b,node){const out=[];let p=node.start;while(p<node.end){const k=rd(b,p);out.push(k);p=k.end}return out}
+function oidStr(b){const a=[Math.floor(b[0]/40),b[0]%40];let v=0;for(let i=1;i<b.length;i++){v=v*128+(b[i]&127);if(!(b[i]&128)){a.push(v);v=0}}return a.join('.')}
+function decStr(n){if(n.tag===0x1e){let s='';for(let i=0;i<n.body.length;i+=2)s+=String.fromCharCode(n.body[i]<<8|n.body[i+1]);return s}
+  return n.tag===0x0c?dec.decode(n.body):String.fromCharCode(...n.body)}
+const NAMES={'2.5.4.3':'CN','2.5.4.6':'C','2.5.4.10':'O','2.5.4.11':'OU','2.5.4.7':'L','2.5.4.8':'ST'};
+function nameStr(der,node){const out=[];for(const rdn of kids(der,node))for(const atv of kids(der,rdn)){const [o,v]=kids(der,atv);out.push((NAMES[oidStr(o.body)]||oidStr(o.body))+'='+decStr(v))}return out.join(', ')}
+function timeOf(n){const s=String.fromCharCode(...n.body);const yy=n.tag===0x17?(+s.slice(0,2)<50?2000:1900)+ +s.slice(0,2):+s.slice(0,4);const r=n.tag===0x17?s.slice(2):s.slice(4);
+  return new Date(Date.UTC(yy,+r.slice(0,2)-1,+r.slice(2,4),+r.slice(4,6),+r.slice(6,8),+r.slice(8,10)))}
+async function parseCert(der){
+  const c=rd(der);const tbs=kids(der,c)[0];const f=kids(der,tbs);let i=0;if(f[0].tag===0xa0)i=1;
+  const serial=f[i],issuer=f[i+2],val=kids(der,f[i+3]),subject=f[i+4],spki=f[i+5];
+  const fp=Array.from(new Uint8Array(await subtle.digest('SHA-256',der)),b=>b.toString(16).padStart(2,'0')).join(':').toUpperCase();
+  return{der,issuerDer:issuer.all,serialDer:serial.all,spkiDer:spki.all,subject:nameStr(der,subject),issuer:nameStr(der,issuer),
+    serialHex:Array.from(serial.body,b=>b.toString(16).padStart(2,'0')).join('').replace(/^0+/,''),nb:timeOf(val[0]),na:timeOf(val[1]),fp};
+}
+
+/* ---------- PEM / base64 ---------- */
+const b64=b=>{let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s.replace(/\s+/g,'')),c=>c.charCodeAt(0));
+const pem=(label,der)=>`-----BEGIN ${label}-----\n${b64(der).replace(/(.{64})/g,'$1\n').trim()}\n-----END ${label}-----\n`;
+function pemBlocks(text){const out=[];const re=/-----BEGIN ([A-Z0-9 ]+)-----([\s\S]*?)-----END \1-----/g;let m;while((m=re.exec(text)))out.push({label:m[1],der:unb64(m[2])});return out}
+const toPkcs8=(label,der)=>label==='RSA PRIVATE KEY'?SEQ(intN(0),SEQ(oid(O.rsa),NULL),octet(der)):der;
+
+/* ---------- tạo chứng chỉ ---------- */
+const ALG={name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'};
+const rdn=(o,v,printable)=>SET(SEQ(oid(o),printable?prtS(v):utf8S(v)));
+const hex=b=>Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');
+
+async function makeCert(p){
+  const kp=await subtle.generateKey({...ALG,modulusLength:p.bits,publicExponent:Uint8Array.of(1,0,1)},true,['sign','verify']);
+  const spki=new Uint8Array(await subtle.exportKey('spki',kp.publicKey));
+  const pkcs8=new Uint8Array(await subtle.exportKey('pkcs8',kp.privateKey));
+  const parts=[];
+  if(p.co)parts.push(rdn(O.c,p.co,true));
+  if(p.org)parts.push(rdn(O.o,p.org));
+  if(p.ou)parts.push(rdn(O.ou,p.ou));
+  parts.push(rdn(O.cn,p.cn));
+  const name=SEQ(...parts);
+  const bitNode=kids(spki,rd(spki,0))[1];
+  const ski=new Uint8Array(await subtle.digest('SHA-1',bitNode.body.subarray(1)));
+  const T=Uint8Array.of(255);
+  const ext=[
+    SEQ(oid('2.5.29.19'),tlv(1,T),octet(SEQ(...(p.ca?[tlv(1,T)]:[])))),
+    SEQ(oid('2.5.29.15'),tlv(1,T),octet(p.ca?Uint8Array.of(3,2,2,0x84):Uint8Array.of(3,2,7,0x80))),
+    SEQ(oid('2.5.29.14'),octet(octet(ski)))
+  ];
+  const serial=crypto.getRandomValues(new Uint8Array(16));serial[0]=(serial[0]&0x7f)|0x40;
+  const nb=new Date(Date.now()-86400000),na=new Date(Date.now()+p.years*365.25*86400000);
+  const sigAlg=SEQ(oid(O.sha256rsa),NULL);
+  const tbs=SEQ(tlv(0xa0,intN(2)),intU(serial),sigAlg,name,SEQ(utcT(nb),utcT(na)),name,spki,tlv(0xa3,SEQ(...ext)));
+  const sig=new Uint8Array(await subtle.sign(ALG,kp.privateKey,tbs));
+  const der=SEQ(tbs,sigAlg,bitStr(sig));
+  return{der,pkcs8};
+}
+
+/* ---------- ký CMS (PKCS#7 SignedData) ---------- */
+async function cmsSign(content,cert,privKey,detached){
+  const digest=new Uint8Array(await subtle.digest('SHA-256',content));
+  const attrs=[
+    SEQ(oid(O.ct),SET(oid(O.data))),
+    SEQ(oid(O.st),SET(utcT(new Date()))),
+    SEQ(oid(O.md),SET(octet(digest)))
+  ].sort(cmp);
+  const setBody=cat(...attrs);
+  const sig=new Uint8Array(await subtle.sign(ALG,privKey,tlv(0x31,setBody)));
+  const signerInfo=SEQ(intN(1),SEQ(cert.issuerDer,cert.serialDer),SEQ(oid(O.sha256),NULL),tlv(0xa0,setBody),SEQ(oid(O.rsa),NULL),octet(sig));
+  const eci=detached?SEQ(oid(O.data)):SEQ(oid(O.data),tlv(0xa0,octet(content)));
+  const sd=SEQ(intN(1),SET(SEQ(oid(O.sha256),NULL)),eci,tlv(0xa0,cert.der),SET(signerInfo));
+  const out=SEQ(oid(O.signed),tlv(0xa0,sd));
+  // tự kiểm tra: chữ ký đúng với chứng chỉ + nội dung nhúng khớp bản gốc
+  const pub=await subtle.importKey('spki',cert.spkiDer,ALG,false,['verify']);
+  const okSig=await subtle.verify(ALG,pub,sig,tlv(0x31,setBody));
+  return{der:out,verified:okSig};
+}
+
+/* ---------- trạng thái ---------- */
+const S={cert:null,priv:null,pkcs8:null,file:null,bytes:null,out:null,outName:'',embed:true,ca:true,save:true,busy:false};
+const say=(t,cls)=>{const e=$('#status');e.textContent=t;e.className=cls||''};
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+
+function download(bytes,name,type){
+  const url=URL.createObjectURL(new Blob([bytes],{type:type||'application/octet-stream'}));
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+const safeName=s=>(s||'cert').replace(/[^\p{L}\p{N}._-]+/gu,'_').slice(0,40)||'cert';
+
+function showCert(){
+  const c=S.cert,box=$('#certInfo');
+  if(!c){box.hidden=true;$('#certBtns').hidden=true;return}
+  box.replaceChildren();
+  const add=(k,v)=>{const d=document.createElement('div'),b=document.createElement('b');b.textContent=k;d.append(b,document.createTextNode(v));box.append(d)};
+  add('Chủ thể',c.subject);add('Hiệu lực',c.nb.toLocaleDateString()+' → '+c.na.toLocaleDateString());add('Serial',c.serialHex.slice(0,24)+'…');add('SHA-256',c.fp.slice(0,47)+'…');
+  add('Khoá riêng',S.priv?'Có (ký được)':'Không có — chỉ xem');
+  box.hidden=false;$('#certBtns').hidden=false;
+}
+async function setIdentity(certDer,pkcs8){
+  S.cert=await parseCert(certDer);
+  S.pkcs8=pkcs8;
+  S.priv=pkcs8?await subtle.importKey('pkcs8',pkcs8,ALG,false,['sign']):null;
+  showCert();
+}
+function persist(){
+  if(!S.save||!S.cert||!S.pkcs8)return;
+  store.set('ts_cert',b64(S.cert.der));store.set('ts_key',b64(S.pkcs8));
+}
+
+async function generate(){
+  const cn=$('#cn').value.trim();
+  if(!cn){say('Hãy nhập Tên (Common Name).','err');return false}
+  const co=$('#co').value.trim().toUpperCase();
+  if(co&&!/^[A-Z]{2}$/.test(co)){say('Quốc gia phải đúng 2 chữ cái (VD: VN).','err');return false}
+  const bits=+$('#bits').value;
+  say('Đang tạo khoá RSA '+bits+'-bit…','warn');
+  await new Promise(r=>setTimeout(r,30));
+  const r=await makeCert({cn,org:$('#org').value.trim(),ou:$('#ou').value.trim(),co,bits,years:+$('#yrs').value,ca:S.ca});
+  await setIdentity(r.der,r.pkcs8);persist();
+  say('Đã tạo chứng chỉ.','ok');return true;
+}
+
+/* ---------- file ---------- */
+function kindOf(b){
+  const head=String.fromCharCode(...b.subarray(0,8));
+  if(head==='bplist00'){return b.length>=40?'Binary plist (bplist) ✔':'bplist nhưng file quá ngắn — có thể hỏng'}
+  const t=dec.decode(b.subarray(0,200)).trimStart();
+  if(t.startsWith('<?xml')||t.startsWith('<plist'))return'XML plist ✔';
+  return'File thường (ký như dữ liệu nhị phân)';
+}
+async function pickFile(f){
+  if(!f)return;
+  S.file=f;S.bytes=new Uint8Array(await f.arrayBuffer());S.out=null;$('#outBtns').hidden=true;
+  $('#fileInfo').textContent=f.name+' · '+(S.bytes.length/1024).toFixed(1)+' KB · '+kindOf(S.bytes);
+  say('');
+}
+async function signNow(){
+  if(!S.bytes){say('Hãy chọn file cần ký trước.','err');return}
+  if(!S.priv){const ok=await generate();if(!ok)return}
+  say('Đang ký…','warn');
+  const{der,verified}=await cmsSign(S.bytes,S.cert,S.priv,!S.embed);
+  if(!verified){say('Chữ ký không khớp chứng chỉ (khoá riêng không thuộc chứng chỉ này).','err');return}
+  const base=S.file.name.replace(/\.[^.]+$/,'');
+  const ext=(S.file.name.split('.').pop()||'').toLowerCase();
+  S.out=der;
+  S.outName=S.embed?(['mobileconfig','plist','bplist'].includes(ext)?base+'.signed.mobileconfig':S.file.name+'.signed.p7'):S.file.name+'.p7s';
+  $('#outBtns').hidden=false;
+  $('#dlOut').textContent='⬇ Tải '+S.outName;
+  say('Đã ký và kiểm tra lại chữ ký ✔ ('+(der.length/1024).toFixed(1)+' KB)','ok');
+}
+
+/* ---------- ký tự đặc biệt ---------- */
+const PAL=['✦','✧','★','☆','❖','✪','⚡','☯','♛','♚','✔','❤','♫','☠','✿','❀','♠','♣','•','·','◆','◇','▲','™','®','©','℗','‼','⁂','✺','𝕋','𝓣','ᴛ','ǀ','│','ー','〖','〗','【','】','「','」'];
+function insertAtCursor(el,s){
+  const a=el.selectionStart??el.value.length,b=el.selectionEnd??el.value.length;
+  el.value=el.value.slice(0,a)+s+el.value.slice(b);
+  const p=a+s.length;try{el.setSelectionRange(p,p)}catch(e){}
+  el.focus();
+}
+function randomName(){
+  const w=['Touch','Leviz','Tech','Nova','Pixel','Aura','Zen','Flux','Kira','Neon','Echo','Vega'];
+  const l=['✦','★','❖','⚡','♛','✪','☯','✿','◆'];
+  const r=a=>a[Math.floor(Math.random()*a.length)];
+  const f=Math.random();
+  const name=f<.34?`${r(l)} ${r(w)} ${r(w)} ${r(l)}`:f<.67?`【${r(w)}】${r(w)} ${r(l)}`:`${r(w)}${r(l)}${r(w)} ™`;
+  $('#cn').value=name;
+}
+
+/* ---------- sự kiện ---------- */
+function toggle(id,key){const b=$(id);b.addEventListener('click',()=>{S[key]=!S[key];b.setAttribute('aria-checked',String(S[key]));
+  if(key==='save'){if(S.save)persist();else{store.del('ts_cert');store.del('ts_key')}}})}
+toggle('#swCA','ca');toggle('#swSave','save');toggle('#swEmb','embed');
+
+const ch=$('#chips');for(const c of PAL){const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=c;
+  b.addEventListener('click',()=>insertAtCursor($('#cn'),c));ch.append(b)}
+$('#rnd').addEventListener('click',randomName);
+
+async function guard(fn){if(S.busy)return;S.busy=true;document.querySelectorAll('.btn').forEach(b=>b.disabled=true);
+  try{await fn()}catch(e){say('Lỗi: '+(e&&e.message||e),'err')}finally{S.busy=false;document.querySelectorAll('.btn').forEach(b=>b.disabled=false)}}
+
+$('#gen').addEventListener('click',()=>guard(generate));
+$('#auto').addEventListener('click',()=>guard(signNow));
+$('#dlOut').addEventListener('click',()=>{if(S.out)download(S.out,S.outName,'application/x-apple-aspen-config')});
+$('#dlCrt').addEventListener('click',()=>{if(S.cert)download(S.cert.der,safeName($('#cn').value)+'.crt','application/x-x509-ca-cert')});
+$('#dlPem').addEventListener('click',()=>{if(!S.cert)return;
+  const t=pem('CERTIFICATE',S.cert.der)+(S.pkcs8?pem('PRIVATE KEY',S.pkcs8):'');
+  download(enc.encode(t),safeName($('#cn').value)+'.pem','application/x-pem-file')});
+$('#clr').addEventListener('click',()=>{S.cert=S.priv=S.pkcs8=null;store.del('ts_cert');store.del('ts_key');showCert();say('Đã xoá chứng chỉ.')});
+
+$('#loadBtn').addEventListener('click',()=>$('#loadFiles').click());
+$('#loadFiles').addEventListener('change',e=>guard(async()=>{
+  let certDer=null,key=null;
+  for(const f of e.target.files){
+    const buf=new Uint8Array(await f.arrayBuffer());
+    const text=dec.decode(buf);
+    const blocks=text.includes('-----BEGIN')?pemBlocks(text):[{label:'CERTIFICATE',der:buf}];
+    for(const b of blocks){
+      if(b.label==='CERTIFICATE')certDer=certDer||b.der;
+      else if(b.label==='PRIVATE KEY'||b.label==='RSA PRIVATE KEY')key=toPkcs8(b.label,b.der);
+    }
+  }
+  e.target.value='';
+  if(!certDer){say('Không thấy chứng chỉ trong file đã chọn.','err');return}
+  await setIdentity(certDer,key);persist();
+  say(key?'Đã nạp chứng chỉ và khoá riêng.':'Đã nạp chứng chỉ (không có khoá riêng — chưa ký được).',key?'ok':'warn');
+}));
+
+const drop=$('#drop'),fi=$('#file');
+drop.addEventListener('click',()=>fi.click());
+fi.addEventListener('change',()=>pickFile(fi.files[0]));
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('on')}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('on')}));
+drop.addEventListener('drop',e=>pickFile(e.dataTransfer.files[0]));
+
+let hl=0,hev=null;
+document.addEventListener('pointermove',e=>{hev=e;if(hl)return;hl=requestAnimationFrame(()=>{hl=0;const g=hev.target.closest&&hev.target.closest('.glass');if(!g)return;
+  const r=g.getBoundingClientRect();g.style.setProperty('--mx',(hev.clientX-r.left)+'px');g.style.setProperty('--my',(hev.clientY-r.top)+'px')})},{passive:true});
+
+/* nạp lại chứng chỉ đã lưu */
+(async()=>{try{const c=store.get('ts_cert'),k=store.get('ts_key');if(c&&k&&subtle){await setIdentity(unb64(c),unb64(k))}}catch(e){store.del('ts_cert');store.del('ts_key')}})();
+window.__ts={makeCert,cmsSign,parseCert};   // phục vụ kiểm thử
+})();
+</script>
+</body>
+</html>
