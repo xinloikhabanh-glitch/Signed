@@ -14,8 +14,10 @@ struct TouchStudioApp: App {
                 TabView {
                     WebTab(page: "keys")
                         .tabItem { Label("Tạo key", systemImage: "key.fill") }
+                    WebTab(page: "studio")
+                        .tabItem { Label("Cert Studio", systemImage: "checkmark.seal.fill") }
                     WebTab(page: "signer")
-                        .tabItem { Label("Cert & Ký", systemImage: "checkmark.seal.fill") }
+                        .tabItem { Label("Ký bplist", systemImage: "square.and.pencil") }
                 }
                 .accentColor(Color(red: 0.39, green: 0.82, blue: 1.0))
             }
