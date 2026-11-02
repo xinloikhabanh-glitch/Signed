@@ -115,6 +115,38 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(10
       <button class="btn ghost" id="dlPem" type="button">⬇ .pem (cert + khoá)</button>
       <button class="btn ghost" id="clr" type="button">Xoá</button>
     </div>
+    <label for="libName" style="margin-top:14px">Kho chứng chỉ (lưu nhiều chứng chỉ có tên)</label>
+    <div class="grid2">
+      <div><input id="libName" type="text" placeholder="Tên để lưu, vd: Cert chính" autocomplete="off"></div>
+      <div><button class="btn" id="libSave" type="button">Lưu vào kho</button></div>
+    </div>
+    <div id="libList"></div>
+  </section>
+
+  <section class="glass">
+    <h2>1b · Mẫu cấu hình .mobileconfig (tuỳ chọn)</h2>
+    <label for="tplKind">Loại</label>
+    <select id="tplKind"><option value="wifi">Wi-Fi</option><option value="dns">DNS riêng (mã hoá)</option></select>
+    <div id="tplWifi">
+      <div class="grid2">
+        <div><label for="wSsid">Tên Wi-Fi (SSID)</label><input id="wSsid" type="text" autocomplete="off"></div>
+        <div><label for="wPass">Mật khẩu</label><input id="wPass" type="text" autocomplete="off"></div>
+      </div>
+      <label for="wSec">Bảo mật</label>
+      <select id="wSec"><option value="WPA">WPA / WPA2 / WPA3</option><option value="None">Mở (không mật khẩu)</option></select>
+      <div class="row"><div>Mạng ẩn</div><button class="sw" id="swHid" role="switch" aria-checked="false" aria-label="Ẩn"></button></div>
+    </div>
+    <div id="tplDns" hidden>
+      <label for="dPre">Nhà cung cấp</label>
+      <select id="dPre"><option value="cf">Cloudflare (1.1.1.1)</option><option value="gg">Google</option><option value="ag">AdGuard (chặn quảng cáo)</option><option value="q9">Quad9</option><option value="custom">Tự nhập</option></select>
+      <label for="dUrl">DNS-over-HTTPS (https://…/dns-query)</label><input id="dUrl" type="text" autocomplete="off" spellcheck="false">
+      <label for="dIps">Địa chỉ IP (cách nhau dấu phẩy, tuỳ chọn)</label><input id="dIps" type="text" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="btns">
+      <button class="btn ghost" id="tplUse" type="button">Dùng làm file cần ký</button>
+      <button class="btn" id="tplSign" type="button">Tạo &amp; ký ngay</button>
+    </div>
+    <p class="note">Mật khẩu Wi-Fi nằm trong file ở dạng chữ thường (chữ ký chỉ chống sửa, không mã hoá). Đừng chia sẻ file đi.</p>
   </section>
 
   <section class="glass">
@@ -151,12 +183,26 @@ function del(k){try{localStorage.removeItem(k)}catch(e){}}
 function hwid(){var id=g('tt_hwid');if(!id){var a=new Uint8Array(16);crypto.getRandomValues(a);id='web-'+Array.prototype.map.call(a,function(b){return('0'+b.toString(16)).slice(-2)}).join('');sset('tt_hwid',id)}return id}
 var HW=hwid(),session=null,skew=0,timer=null,tick=null;
 
+var PUB='';   // dán publicKey (từ tab Hệ thống > Tạo cặp khoá) để bật kiểm tra chữ ký ES256; để trống = không kiểm tra
+function b64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function checkSig(r,nonce){
+  if(!PUB||!r.d||!r.d.success)return Promise.resolve(r);
+  var d=r.d,bad=function(){return{status:403,d:{success:false,error:'BAD_SIGNATURE',message:'Phản hồi máy chủ không hợp lệ (sai chữ ký)'}}};
+  if(!d.sig||d.nonce!==nonce||!window.crypto||!crypto.subtle)return Promise.resolve(bad());
+  var str=[d.key,d.tier,d.expiresAt==null?0:d.expiresAt,d.serverTime,nonce].join('|');
+  return crypto.subtle.importKey('spki',b64(PUB),{name:'ECDSA',namedCurve:'P-256'},false,['verify'])
+    .then(function(k){return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,b64(d.sig),new TextEncoder().encode(str))})
+    .then(function(ok){return ok?r:bad()},function(){return bad()});
+}
+function msgOf(r,def){var d=r.d;if(!d)return def;var m=d.message||d.error||def;if(d.updateUrl)m+=' '+d.updateUrl;return m}
 function verify(key){
+  var na=new Uint8Array(8);crypto.getRandomValues(na);var nonce=Array.prototype.map.call(na,function(b){return('0'+b.toString(16)).slice(-2)}).join('');
   var ctl=typeof AbortController==='function'?new AbortController():null;
   var to=setTimeout(function(){if(ctl)ctl.abort()},15000);
   return fetch(API,{method:'POST',headers:{'content-type':'application/json'},signal:ctl?ctl.signal:undefined,
-    body:JSON.stringify({key:key,hwid:HW,deviceName:navigator.platform||'web'})})
-  .then(function(r){return r.json().then(function(d){return{status:r.status,d:d}})})
+    body:JSON.stringify({key:key,hwid:HW,deviceName:navigator.platform||'web',nonce:nonce,appVersion:(window.TTNative&&window.TTNative.version)||undefined})})
+  .then(function(r){return r.json().then(function(d){return{status:r.status,d:d}},function(){return{status:r.status,d:null}})})
+  .then(function(r){return checkSig(r,nonce)})
   .finally(function(){clearTimeout(to)});
 }
 function mask(k){return k.length>10?k.slice(0,4)+'••••'+k.slice(-4):k}
@@ -185,8 +231,8 @@ function recheck(){
   var key=g('tt_key');if(!key)return lock('');
   verify(key).then(function(r){
     if(!r.d||!r.d.success){
-      if(r.status>=500)return;                 // lỗi máy chủ: không khoá
-      lock((r.d&&(r.d.message||r.d.error))||'Key không còn hiệu lực');return;
+      if(r.status>=500&&!(r.d&&r.d.error==='MAINTENANCE'))return;   // lỗi máy chủ: không khoá (trừ bảo trì)
+      lock(msgOf(r,'Key không còn hiệu lực'));return;
     }
     session=r.d;skew=r.d.serverTime-Date.now();badge();
   }).catch(function(){ /* mất mạng: giữ nguyên, thử lại lần sau */ });
@@ -197,7 +243,7 @@ function submit(){
   $('ttGo').disabled=true;$('ttMsg').textContent='';
   verify(key).then(function(r){
     if(r.d&&r.d.success)unlock(r.d,key);
-    else lock((r.d&&(r.d.message||r.d.error))||'Key không hợp lệ');
+    else lock(msgOf(r,'Key không hợp lệ'));
   }).catch(function(){$('ttMsg').textContent='Không kết nối được máy chủ. Thử lại sau.'})
   .finally(function(){$('ttGo').disabled=false});
 }
@@ -450,6 +496,69 @@ drop.addEventListener('drop',e=>pickFile(e.dataTransfer.files[0]));
 let hl=0,hev=null;
 document.addEventListener('pointermove',e=>{hev=e;if(hl)return;hl=requestAnimationFrame(()=>{hl=0;const g=hev.target.closest&&hev.target.closest('.glass');if(!g)return;
   const r=g.getBoundingClientRect();g.style.setProperty('--mx',(hev.clientX-r.left)+'px');g.style.setProperty('--my',(hev.clientY-r.top)+'px')})},{passive:true});
+
+
+/* ---------- kho chứng chỉ ---------- */
+const libGet=()=>{try{const a=JSON.parse(store.get('ts_lib')||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}};
+const libSet=a=>store.set('ts_lib',JSON.stringify(a));
+function renderLib(){
+  const box=$('#libList');box.replaceChildren();
+  const a=libGet();
+  if(!a.length){const n=document.createElement('p');n.className='note';n.textContent='Kho trống.';box.append(n);return}
+  a.forEach((it,i)=>{
+    const row=document.createElement('div');row.className='row';
+    const t=document.createElement('div');t.textContent=it.name;
+    const bs=document.createElement('div');bs.className='btns';
+    const use=document.createElement('button');use.type='button';use.className='btn ghost';use.textContent='Dùng';
+    use.addEventListener('click',()=>guard(async()=>{await setIdentity(unb64(it.cert),unb64(it.key));persist();say('Đang dùng chứng chỉ "'+it.name+'".','ok')}));
+    const del=document.createElement('button');del.type='button';del.className='btn ghost';del.textContent='Xoá';
+    del.addEventListener('click',()=>{if(!confirm('Xoá "'+it.name+'" khỏi kho?'))return;const l=libGet();l.splice(i,1);libSet(l);renderLib()});
+    bs.append(use,del);row.append(t,bs);box.append(row);
+  });
+}
+$('#libSave').addEventListener('click',()=>{
+  if(!S.cert||!S.pkcs8){say('Cần có chứng chỉ kèm khoá riêng để lưu vào kho.','err');return}
+  const name=($('#libName').value.trim()||$('#cn').value.trim()||'Cert').slice(0,40);
+  const l=libGet().filter(x=>x.name!==name);
+  l.push({name,cert:b64(S.cert.der),key:b64(S.pkcs8)});
+  if(l.length>30)l.shift();
+  libSet(l);renderLib();$('#libName').value='';say('Đã lưu "'+name+'" vào kho.','ok');
+});
+renderLib();
+
+/* ---------- mẫu .mobileconfig ---------- */
+const xe=v=>String(v).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[c]));
+const uuid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)})).toUpperCase();
+const DNSP={cf:['https://cloudflare-dns.com/dns-query','1.1.1.1, 1.0.0.1'],gg:['https://dns.google/dns-query','8.8.8.8, 8.8.4.4'],ag:['https://dns.adguard-dns.com/dns-query','94.140.14.14, 94.140.15.15'],q9:['https://dns.quad9.net/dns-query','9.9.9.9, 149.112.112.112']};
+let hidden=false;
+$('#swHid').addEventListener('click',e=>{hidden=!hidden;e.currentTarget.setAttribute('aria-checked',String(hidden))});
+function dnsFill(){const k=$('#dPre').value;if(DNSP[k]){$('#dUrl').value=DNSP[k][0];$('#dIps').value=DNSP[k][1]}}
+$('#dPre').addEventListener('change',dnsFill);dnsFill();
+$('#tplKind').addEventListener('change',()=>{const w=$('#tplKind').value==='wifi';$('#tplWifi').hidden=!w;$('#tplDns').hidden=w});
+function buildTpl(){
+  const wrap=(title,idn,inner)=>'<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n<key>PayloadContent</key>\n<array>\n'+inner+'</array>\n<key>PayloadDisplayName</key><string>'+xe(title)+'</string>\n<key>PayloadIdentifier</key><string>com.touchtech.'+idn+'.'+uuid()+'</string>\n<key>PayloadType</key><string>Configuration</string>\n<key>PayloadUUID</key><string>'+uuid()+'</string>\n<key>PayloadVersion</key><integer>1</integer>\n</dict>\n</plist>\n';
+  if($('#tplKind').value==='wifi'){
+    const ssid=$('#wSsid').value.trim();if(!ssid){say('Hãy nhập tên Wi-Fi.','err');return null}
+    const open=$('#wSec').value==='None',pw=$('#wPass').value;
+    if(!open&&pw.length<8){say('Mật khẩu WPA cần từ 8 ký tự.','err');return null}
+    const inner='<dict>\n<key>AutoJoin</key><true/>\n<key>EncryptionType</key><string>'+(open?'None':'WPA')+'</string>\n<key>HIDDEN_NETWORK</key><'+(hidden?'true':'false')+'/>\n'+(open?'':'<key>Password</key><string>'+xe(pw)+'</string>\n')+'<key>PayloadDisplayName</key><string>Wi-Fi '+xe(ssid)+'</string>\n<key>PayloadIdentifier</key><string>com.touchtech.wifi.'+uuid()+'</string>\n<key>PayloadType</key><string>com.apple.wifi.managed</string>\n<key>PayloadUUID</key><string>'+uuid()+'</string>\n<key>PayloadVersion</key><integer>1</integer>\n<key>SSID_STR</key><string>'+xe(ssid)+'</string>\n</dict>\n';
+    return{name:safeName('wifi-'+ssid)+'.mobileconfig',xml:wrap('Wi-Fi '+ssid,'wifi',inner)};
+  }
+  const url=$('#dUrl').value.trim();
+  if(!/^https:\/\/[^\s]+$/i.test(url)){say('Địa chỉ DNS phải bắt đầu bằng https://','err');return null}
+  const ips=$('#dIps').value.split(/[\s,]+/).filter(Boolean);
+  for(const ip of ips)if(!/^[0-9a-fA-F:.]+$/.test(ip)){say('Địa chỉ IP không hợp lệ: '+ip,'err');return null}
+  const inner='<dict>\n<key>DNSSettings</key>\n<dict>\n<key>DNSProtocol</key><string>HTTPS</string>\n'+(ips.length?'<key>ServerAddresses</key>\n<array>'+ips.map(i=>'<string>'+xe(i)+'</string>').join('')+'</array>\n':'')+'<key>ServerURL</key><string>'+xe(url)+'</string>\n</dict>\n<key>PayloadDisplayName</key><string>DNS riêng</string>\n<key>PayloadIdentifier</key><string>com.touchtech.dns.'+uuid()+'</string>\n<key>PayloadType</key><string>com.apple.dnsSettings.managed</string>\n<key>PayloadUUID</key><string>'+uuid()+'</string>\n<key>PayloadVersion</key><integer>1</integer>\n</dict>\n';
+  return{name:'dns-rieng.mobileconfig',xml:wrap('DNS riêng','dns',inner)};
+}
+function useTpl(){
+  const t=buildTpl();if(!t)return false;
+  S.file={name:t.name};S.bytes=enc.encode(t.xml);S.out=null;$('#outBtns').hidden=true;
+  $('#fileInfo').textContent=t.name+' · '+(S.bytes.length/1024).toFixed(1)+' KB · XML plist ✔ (từ mẫu)';
+  say('Đã tạo '+t.name+'. Bấm "Ký tự động" ở mục 2 để ký.','ok');return true;
+}
+$('#tplUse').addEventListener('click',useTpl);
+$('#tplSign').addEventListener('click',()=>guard(async()=>{if(useTpl())await signNow()}));
 
 /* nạp lại chứng chỉ đã lưu */
 (async()=>{try{const c=store.get('ts_cert'),k=store.get('ts_key');if(c&&k&&subtle){await setIdentity(unb64(c),unb64(k))}}catch(e){store.del('ts_cert');store.del('ts_key')}})();

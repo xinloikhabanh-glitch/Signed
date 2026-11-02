@@ -1658,12 +1658,26 @@ function del(k){try{localStorage.removeItem(k)}catch(e){}}
 function hwid(){var id=g('tt_hwid');if(!id){var a=new Uint8Array(16);crypto.getRandomValues(a);id='web-'+Array.prototype.map.call(a,function(b){return('0'+b.toString(16)).slice(-2)}).join('');sset('tt_hwid',id)}return id}
 var HW=hwid(),session=null,skew=0,timer=null,tick=null;
 
+var PUB='';   // dán publicKey (từ tab Hệ thống > Tạo cặp khoá) để bật kiểm tra chữ ký ES256; để trống = không kiểm tra
+function b64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+function checkSig(r,nonce){
+  if(!PUB||!r.d||!r.d.success)return Promise.resolve(r);
+  var d=r.d,bad=function(){return{status:403,d:{success:false,error:'BAD_SIGNATURE',message:'Phản hồi máy chủ không hợp lệ (sai chữ ký)'}}};
+  if(!d.sig||d.nonce!==nonce||!window.crypto||!crypto.subtle)return Promise.resolve(bad());
+  var str=[d.key,d.tier,d.expiresAt==null?0:d.expiresAt,d.serverTime,nonce].join('|');
+  return crypto.subtle.importKey('spki',b64(PUB),{name:'ECDSA',namedCurve:'P-256'},false,['verify'])
+    .then(function(k){return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,b64(d.sig),new TextEncoder().encode(str))})
+    .then(function(ok){return ok?r:bad()},function(){return bad()});
+}
+function msgOf(r,def){var d=r.d;if(!d)return def;var m=d.message||d.error||def;if(d.updateUrl)m+=' '+d.updateUrl;return m}
 function verify(key){
+  var na=new Uint8Array(8);crypto.getRandomValues(na);var nonce=Array.prototype.map.call(na,function(b){return('0'+b.toString(16)).slice(-2)}).join('');
   var ctl=typeof AbortController==='function'?new AbortController():null;
   var to=setTimeout(function(){if(ctl)ctl.abort()},15000);
   return fetch(API,{method:'POST',headers:{'content-type':'application/json'},signal:ctl?ctl.signal:undefined,
-    body:JSON.stringify({key:key,hwid:HW,deviceName:navigator.platform||'web'})})
-  .then(function(r){return r.json().then(function(d){return{status:r.status,d:d}})})
+    body:JSON.stringify({key:key,hwid:HW,deviceName:navigator.platform||'web',nonce:nonce,appVersion:(window.TTNative&&window.TTNative.version)||undefined})})
+  .then(function(r){return r.json().then(function(d){return{status:r.status,d:d}},function(){return{status:r.status,d:null}})})
+  .then(function(r){return checkSig(r,nonce)})
   .finally(function(){clearTimeout(to)});
 }
 function mask(k){return k.length>10?k.slice(0,4)+'••••'+k.slice(-4):k}
@@ -1692,8 +1706,8 @@ function recheck(){
   var key=g('tt_key');if(!key)return lock('');
   verify(key).then(function(r){
     if(!r.d||!r.d.success){
-      if(r.status>=500)return;                 // lỗi máy chủ: không khoá
-      lock((r.d&&(r.d.message||r.d.error))||'Key không còn hiệu lực');return;
+      if(r.status>=500&&!(r.d&&r.d.error==='MAINTENANCE'))return;   // lỗi máy chủ: không khoá (trừ bảo trì)
+      lock(msgOf(r,'Key không còn hiệu lực'));return;
     }
     session=r.d;skew=r.d.serverTime-Date.now();badge();
   }).catch(function(){ /* mất mạng: giữ nguyên, thử lại lần sau */ });
@@ -1704,7 +1718,7 @@ function submit(){
   $('ttGo').disabled=true;$('ttMsg').textContent='';
   verify(key).then(function(r){
     if(r.d&&r.d.success)unlock(r.d,key);
-    else lock((r.d&&(r.d.message||r.d.error))||'Key không hợp lệ');
+    else lock(msgOf(r,'Key không hợp lệ'));
   }).catch(function(){$('ttMsg').textContent='Không kết nối được máy chủ. Thử lại sau.'})
   .finally(function(){$('ttGo').disabled=false});
 }
