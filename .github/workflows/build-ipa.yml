@@ -18,13 +18,13 @@ jobs:
             unzip -oq ios-src.zip
           fi
           ls -la
-          for f in project.yml Sources/App.swift Sources/WebHost.swift Resources/keys.html Resources/studio.html Resources/signer.html; do
+          for f in project.yml Sources/App.swift Sources/WebHost.swift Sources/Security.swift Sources/Player.swift Resources/keys.html Resources/studio.html Resources/signer.html; do
             if [ ! -f "$f" ]; then
               echo "THIẾU FILE: $f  (hãy upload ios-src.zip ở thư mục gốc repo, đừng giải nén)"
               exit 1
             fi
           done
-          if ls Sources/*.swift | grep -vE "App.swift|WebHost.swift"; then
+          if ls Sources/*.swift | grep -vE "App.swift|WebHost.swift|Security.swift|Player.swift"; then
             echo "Có file .swift lạ trong Sources/ (ở trên), hãy xoá nó."
             exit 1
           fi
@@ -81,6 +81,7 @@ jobs:
           if [ -z "$APP" ]; then echo "Không thấy file .app"; exit 1; fi
           # kiểm tra 2 trang HTML đã vào app
           ls "$APP" | grep -E "keys.html|studio.html|signer.html"
+          ls "$APP" | grep -ci "mp3" || echo "(không có file nhạc trong app, thanh nhạc sẽ tự ẩn)"
           mkdir -p Payload
           cp -R "$APP" Payload/
           zip -qr TouchStudio.ipa Payload
