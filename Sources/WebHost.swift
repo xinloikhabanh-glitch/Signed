@@ -14,6 +14,7 @@ struct WebTab: UIViewRepresentable {
                                        injectionTime: .atDocumentStart,
                                        forMainFrameOnly: true))
         ucc.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "api")
+        ucc.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "secret")
         ucc.add(context.coordinator, name: "save")
         ucc.add(context.coordinator, name: "store")
 
@@ -69,6 +70,19 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWith
           var BASE = '\(base)';
           var post = function (name, msg) {
             try { window.webkit.messageHandlers[name].postMessage(msg); } catch (e) {}
+          };
+
+          // ---- thông tin app + Keychain (mật khẩu admin) ----
+          var kc = function (op, v) {
+            return window.webkit.messageHandlers.secret.postMessage({ op: op, v: v || null });
+          };
+          window.TTNative = {
+            version: '\(Config.version)',
+            secret: {
+              get: function () { return kc('get').then(function (r) { return r || ''; }, function () { return ''; }); },
+              set: function (v) { return kc('set', String(v)).catch(function () {}); },
+              del: function () { return kc('del').catch(function () {}); }
+            }
           };
 
           // ---- localStorage lưu bền qua UserDefaults ----
@@ -136,6 +150,22 @@ final class Bridge: NSObject, WKScriptMessageHandler, WKScriptMessageHandlerWith
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage,
                                replyHandler: @escaping (Any?, String?) -> Void) {
+        if message.name == "secret" {
+            let m = message.body as? [String: Any]
+            switch m?["op"] as? String {
+            case "get":
+                replyHandler(Keychain.get("admin") ?? "", nil)
+            case "set":
+                if let v = m?["v"] as? String, !v.isEmpty { Keychain.set("admin", v) }
+                replyHandler("ok", nil)
+            case "del":
+                Keychain.delete("admin")
+                replyHandler("ok", nil)
+            default:
+                replyHandler(nil, "Yêu cầu không hợp lệ")
+            }
+            return
+        }
         guard let d = message.body as? [String: Any],
               let raw = d["url"] as? String else {
             replyHandler(nil, "Yêu cầu không hợp lệ")
